@@ -57,3 +57,53 @@ def delete_race(race_id: int, db: Session = Depends(get_db)):
     db.delete(race)
     db.commit()
     return None
+
+
+# -------------------- Horse Routes --------------------
+@app.post("/horses", response_model=schemas.HorseRead, status_code=status.HTTP_201_CREATED, tags=["Horses"])
+def create_horse(horse_in: schemas.HorseCreate, db: Session = Depends(get_db)):
+     # Ensure race exists
+     race = db.get(models.Race, horse_in.race_id)
+     if not race:
+         raise HTTPException(status_code=404, detail="Race not found")
+
+     horse = models.Horse(**horse_in.model_dump())
+     db.add(horse)
+     db.commit()
+     db.refresh(horse)
+     return horse
+
+
+@app.get("/horses", response_model=list[schemas.HorseRead], tags=["Horses"])
+def list_horses(db: Session = Depends(get_db)):
+     return db.query(models.Horse).all()
+
+
+@app.get("/horses/{horse_id}", response_model=schemas.HorseRead, tags=["Horses"])
+def get_horse(horse_id: int, db: Session = Depends(get_db)):
+     horse = db.get(models.Horse, horse_id)
+     if not horse:
+         raise HTTPException(status_code=404, detail="Horse not found")
+     return horse
+
+
+@app.put("/horses/{horse_id}", response_model=schemas.HorseRead, tags=["Horses"])
+def update_horse(horse_id: int, horse_in: schemas.HorseUpdate, db: Session = Depends(get_db)):
+     horse = db.get(models.Horse, horse_id)
+     if not horse:
+         raise HTTPException(status_code=404, detail="Horse not found")
+     for field, value in horse_in.model_dump(exclude_unset=True).items():
+         setattr(horse, field, value)
+     db.commit()
+     db.refresh(horse)
+     return horse
+
+
+@app.delete("/horses/{horse_id}", status_code=status.HTTP_204_NO_CONTENT, tags=["Horses"])
+def delete_horse(horse_id: int, db: Session = Depends(get_db)):
+     horse = db.get(models.Horse, horse_id)
+     if not horse:
+         raise HTTPException(status_code=404, detail="Horse not found")
+     db.delete(horse)
+     db.commit()
+     return None
