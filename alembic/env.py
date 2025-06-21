@@ -11,7 +11,12 @@ config = context.config
 # This line sets up loggers basically.
 fileConfig(config.config_file_name)
 
-target_metadata = None
+import sys
+import pathlib
+sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
+from src.app import models  # type: ignore
+
+target_metadata = models.Base.metadata
 
 
 def get_url():
