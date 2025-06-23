@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from .database import get_db, ENGINE
 from . import models, schemas
+from .services.racing_post_service import RacingPostService
 
 # Create tables if they don't exist (simple approach for early dev)
 models.Base.metadata.create_all(bind=ENGINE)
@@ -27,6 +28,57 @@ def create_race(race_in: schemas.RaceCreate, db: Session = Depends(get_db)):
 @app.get("/races", response_model=list[schemas.RaceRead], tags=["Races"])
 def list_races(db: Session = Depends(get_db)):
     return db.query(models.Race).all()
+
+
+@app.get("/race-cards", response_model=List[schemas.RaceRead], tags=["Races"])
+def get_race_cards(date: datetime.date, db: Session = Depends(get_db)):
+    """Get race cards from Racing Post and save to database."""
+    try:
+        # Get race cards from Racing Post
+        racing_post_service.save_race_cards_to_db(db, date)
+        
+        # Return all races for the date
+        races = db.query(models.Race).filter(
+            models.Race.race_date == date
+        ).all()
+        
+        return races
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get race cards: {str(e)}")
+
+@app.get("/races/{race_id}", response_model=schemas.RaceAnalysisRead, tags=["Races"])
+def analyze_race(race_id: int, db: Session = Depends(get_db)):
+    race = db.get(models.Race, race_id)
+    if not race:
+        raise HTTPException(status_code=404, detail="Race not found")
+    
+    horses = db.query(models.Horse).filter(models.Horse.race_id == race_id).all()
+    if not horses:
+        raise HTTPException(status_code=400, detail="No horses found for this race")
+    
+    try:
+        # Get Claude analysis
+        claude_analysis = claude_service.analyze_race(race, horses)
+        
+        # Create RaceAnalysis record
+        analysis = models.RaceAnalysis(
+            race_id=race_id,
+            winner_prediction=claude_analysis.winner_prediction,
+            confidence_score=claude_analysis.confidence_score,
+            stake_recommendation=claude_analysis.suggested_stake * 1000,  # Convert percentage to dollar amount
+            expected_profit=claude_analysis.expected_profit,
+            analysis_reasoning=claude_analysis.analysis_reasoning,
+            risk_assessment=claude_analysis.risk_assessment
+        )
+        
+        db.add(analysis)
+        db.commit()
+        db.refresh(analysis)
+        return analysis
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
 
 @app.get("/races/{race_id}", response_model=schemas.RaceRead, tags=["Races"])

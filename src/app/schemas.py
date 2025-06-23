@@ -80,3 +80,97 @@ class HorseRead(HorseBase):
 
     class Config:
         orm_mode = True
+
+
+# -------------------- Bet Schemas --------------------
+class BetBase(BaseModel):
+    race_id: int
+    horse_id: int
+    stake: float
+    odds: float
+    bet_type: str  # WIN, PLACE, EACH_WAY
+
+
+class BetCreate(BetBase):
+    pass
+
+
+class BetUpdate(BaseModel):
+    stake: float | None = None
+    odds: float | None = None
+    bet_type: str | None = None
+    result: str | None = None
+    profit: float | None = None
+
+
+class BetRead(BetBase):
+    id: int
+    result: str | None = None
+    profit: float | None = None
+    placed_at: datetime
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        orm_mode = True
+
+
+# -------------------- Bankroll Schemas --------------------
+class BankrollBase(BaseModel):
+    current_amount: float
+    initial_amount: float
+    max_drawdown: float | None = None
+    daily_limit: float | None = None
+    weekly_limit: float | None = None
+
+
+class BankrollCreate(BankrollBase):
+    pass
+
+
+class BankrollUpdate(BaseModel):
+    current_amount: float | None = None
+    max_drawdown: float | None = None
+    daily_limit: float | None = None
+    weekly_limit: float | None = None
+
+
+class BankrollRead(BankrollBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        orm_mode = True
+
+
+# -------------------- Race Analysis Schemas --------------------
+class RaceAnalysisBase(BaseModel):
+    race_id: int
+    winner_prediction: str
+    confidence_score: float
+    stake_recommendation: float
+    expected_profit: float
+    analysis_reasoning: str
+    risk_assessment: str
+
+
+class RaceAnalysisCreate(RaceAnalysisBase):
+    pass
+
+
+class RaceAnalysisUpdate(BaseModel):
+    winner_prediction: str | None = None
+    confidence_score: float | None = None
+    stake_recommendation: float | None = None
+    expected_profit: float | None = None
+
+
+class RaceAnalysisRead(RaceAnalysisBase):
+    id: int
+    analysis_date: datetime
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        orm_mode = True

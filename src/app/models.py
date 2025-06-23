@@ -50,6 +50,8 @@ class RaceAnalysis(Base):
     confidence_score = Column(Float)
     stake_recommendation = Column(Float)
     expected_profit = Column(Float)
+    analysis_reasoning = Column(Text)
+    risk_assessment = Column(Text)
     analysis_date = Column(DateTime, default=datetime.utcnow)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
