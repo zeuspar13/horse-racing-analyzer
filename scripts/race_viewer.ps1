@@ -4,16 +4,19 @@ Add-Type -AssemblyName System.Windows.Forms
 # Create main form
 $form = New-Object System.Windows.Forms.Form
 $form.Text = "Horse Racing Analyzer"
-$form.Size = New-Object System.Drawing.Size(1000,800)
+$form.Size = New-Object System.Drawing.Size(1400,900)
 $form.StartPosition = "CenterScreen"
 
 # Create DataGridView for race data
 $dataGridView = New-Object System.Windows.Forms.DataGridView
-$dataGridView.Size = New-Object System.Drawing.Size(960,600)
+$dataGridView.Size = New-Object System.Drawing.Size(1360,600)
 $dataGridView.Location = New-Object System.Drawing.Point(20,20)
+$dataGridView.AutoSizeColumnsMode = "AllCells"
 $dataGridView.AutoSizeColumnsMode = "Fill"
 $dataGridView.ReadOnly = $true
 $dataGridView.SelectionMode = "FullRowSelect"
+$dataGridView.AutoSizeColumnsMode = "AllCells"
+$dataGridView.AutoSizeColumnsMode = "Fill"
 
 # Add columns to DataGridView
 $columns = @("Time", "Course", "Race Name", "Class", "Distance", "Forecast", "Tip")
@@ -46,6 +49,9 @@ $refreshButton.Add_Click({
         $statusLabel.Text = "Last updated: $(Get-Date -Format 'HH:mm:ss')"
     } catch {
         Write-Host "Error: $_" -ForegroundColor Red
+        Write-Host "Error details: $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host "Error details: $($_.Exception.Response.StatusCode)" -ForegroundColor Red
+        Write-Host "Error details: $($_.Exception.Response.StatusDescription)" -ForegroundColor Red
         $statusLabel.Text = "Error: $_"
     }
 })
@@ -68,23 +74,19 @@ function Get-RaceData {
     $Headers = @{ Authorization = ("Basic {0}" -f $Base64AuthInfo) }
 
     try {
-        # Get today's date and format it
-        $day = "today"
-        Write-Host "Fetching data for: $day"
-        
         # Build URI with query parameters
-        $uri = "$BaseURL/v1/racecards/free?day=$day&region_codes=gb&region_codes=ire"
+        $uri = "$BaseURL/v1/racecards/free?region_codes=gb&region_codes=ire"
         Write-Host "Requesting from: $uri"
         
-        $response = Invoke-RestMethod -Uri $uri `
-                                     -Headers $Headers `
-                                     -Method Get
+        $response = Invoke-RestMethod -Uri $uri -Headers $Headers -Method Get
         Write-Host "Response received"
         return $response.racecards
     } catch {
-        Write-Host "Error details: $_" -ForegroundColor Red
+        Write-Host "Error: $_" -ForegroundColor Red
         Write-Host "Error details: $($_.Exception.Message)" -ForegroundColor Red
         Write-Host "Error details: $($_.Exception.Response.StatusCode)" -ForegroundColor Red
+        Write-Host "Error details: $($_.Exception.Response.StatusDescription)" -ForegroundColor Red
+        
         return @()
     }
 }
